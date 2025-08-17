@@ -10,8 +10,10 @@ public class TradeRouteController : SerializedMonoBehaviour, IPort
     [SerializeField] private Inventory inventory;
     [SerializeField] private LineRenderer tradeRoutePrefab;
     [SerializeField] private Transform port;
+    [SerializeField] private SelectionIndicator selectionIndicator;
 
     public Transform Position => port;
+    public Transform Offset => transform;
 
     [SerializeField] private int speed;
 
@@ -36,6 +38,15 @@ public class TradeRouteController : SerializedMonoBehaviour, IPort
         }
     }
 
+    public void EnableHighlight()
+    {
+        selectionIndicator?.Enable();
+    }
+
+    public void DisableHighlight()
+    {
+        selectionIndicator?.Disable();
+    }
 }
 
 public class TradeRoute

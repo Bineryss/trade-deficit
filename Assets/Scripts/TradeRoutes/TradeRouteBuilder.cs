@@ -11,6 +11,8 @@ public class TradeRouteBuilder : MonoBehaviour
     [SerializeField] private Vector2 mousePosition;
     [SerializeField] private bool isDrawing;
 
+    private IPort selectedPort;
+    private IPort currentMousePort;
     private NavMeshPath path;
 
     void Awake()
@@ -26,32 +28,44 @@ public class TradeRouteBuilder : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // OnHover();
         DrawLine();
+    }
+
+    void OnDestroy()
+    {
+        path = null;
     }
 
     public void OnSelect(InputAction.CallbackContext context)
     {
-        if (!context.performed) return;
+        selectedPort = GetPortFromMousePosition();
 
-        Ray ray = Camera.main.ScreenPointToRay(mousePosition);
-        if (!Physics.Raycast(ray, out RaycastHit hit)) return;
-        if (!hit.collider.TryGetComponent<IPort>(out var originPort)) return;
-        Debug.Log($"Clicked on: {hit.collider.name} - ${originPort.Position.position}");
+        if (selectedPort == null)
+        {
+            Debug.Log("No port selected");
+            return;
+        }
 
         if (isDrawing)
         {
-            // logic for buidling the route
+            Debug.Log($"Establishing trade route");
             isDrawing = false;
+            selectedPort.DisableHighlight();
+            selectedPort = null;
         }
         else
         {
-            origin = originPort.Position;
+            selectedPort.EnableHighlight();
+            origin = selectedPort.Position;
             isDrawing = true;
         }
     }
 
     private void DrawLine()
     {
+        if (selectedPort == null) return;
+        currentMousePort?.DisableHighlight();
         if (tradeRouteLineRenderer == null) return;
         if (origin == null) return;
         if (!isDrawing)
@@ -62,29 +76,76 @@ public class TradeRouteBuilder : MonoBehaviour
 
 
         Vector3 currentMousePosition = GetMouseWorldPosition();
-        Debug.Log($"Drawing line from {origin.position} to mouse position {currentMousePosition}");
+        currentMousePort = GetPortFromMousePosition();
+        if (selectedPort.Equals(currentMousePort))
+        {
+            currentMousePort = null;
+            return;
+        }
 
-
-        Vector3[] points = CalculatePoints(origin.position, currentMousePosition);
+        Vector3[] points;
+        if (currentMousePort != null)
+        {
+            currentMousePort.EnableHighlight();
+            points = CalculatePoints(selectedPort.Offset.position, origin.position, currentMousePort.Position.position, currentMousePort.Offset.position);
+        }
+        else
+        {
+            points = CalculatePoints(selectedPort.Offset.position, origin.position, currentMousePosition);
+        }
         tradeRouteLineRenderer.positionCount = points.Length;
         tradeRouteLineRenderer.SetPositions(points);
     }
 
-    private Vector3[] CalculatePoints(Vector3 start, Vector3 end)
+    private Vector3[] CalculatePoints(Vector3 offset, Vector3 start, Vector3 end, Vector3 endOffset = default)
     {
-        if (!NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path)) return new Vector3[] { start, end };
+        if (!NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path)) return new Vector3[] { offset, start, end, endOffset };
         if (path.status == NavMeshPathStatus.PathComplete)
         {
-            return path.corners;
+            int arrayOffset = endOffset == default ? 2 : 1;
+            Vector3[] points = new Vector3[path.corners.Length + arrayOffset];
+            points[0] = offset;
+            for (int i = 0; i < path.corners.Length; i++)
+            {
+                points[i + 1] = path.corners[i];
+            }
+            if (endOffset != default)
+            {
+                points[^1] = endOffset;
+            }
+
+            return points;
         }
         else
         {
             Debug.Log("No complete path found");
         }
 
-        return new Vector3[] { start, end };
+        return new Vector3[] { offset, start, end, endOffset };
     }
 
+    private void OnHover()
+    {
+        IPort hoveredPort = GetPortFromMousePosition();
+        if (hoveredPort == null)
+        {
+            hoveredPort?.DisableHighlight();
+        }
+        else
+        {
+            hoveredPort.EnableHighlight();
+        }
+    }
+
+    private IPort GetPortFromMousePosition()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(mousePosition);
+        if (!Physics.Raycast(ray, out RaycastHit hit)) return null;
+        if (!hit.collider.TryGetComponent<IPort>(out var originPort)) return null;
+        Debug.Log($"Clicked on: {hit.collider.name} - ${originPort.Position.position}");
+
+        return originPort;
+    }
 
     private Vector3 GetMouseWorldPosition()
     {
