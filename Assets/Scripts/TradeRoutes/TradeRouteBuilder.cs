@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
@@ -11,9 +12,15 @@ public class TradeRouteBuilder : MonoBehaviour
     [SerializeField] private Vector2 mousePosition;
     [SerializeField] private bool isDrawing;
 
+    [Header("Smoothing Settings")]
+    [SerializeField] private float cornerRadius = 500;
+    [SerializeField] private int arcSamples = 100;
+    [SerializeField] private float minDistance = 100;
+
     private IPort selectedPort;
     private IPort currentMousePort;
     private NavMeshPath path;
+    private Vector3[] navMeshCorners;
 
     void Awake()
     {
@@ -62,6 +69,18 @@ public class TradeRouteBuilder : MonoBehaviour
         }
     }
 
+    void OnDrawGizmos()
+    {
+        if (navMeshCorners == null) return;
+
+        Gizmos.color = Color.red;
+        for (int i = 0; i < navMeshCorners.Length - 1; i++)
+        {
+            Gizmos.DrawWireSphere(navMeshCorners[i], 100);
+            Gizmos.DrawLine(navMeshCorners[i], navMeshCorners[i + 1]);
+        }
+    }
+
     private void DrawLine()
     {
         if (selectedPort == null) return;
@@ -93,8 +112,12 @@ public class TradeRouteBuilder : MonoBehaviour
         {
             points = CalculatePoints(selectedPort.Offset.position, origin.position, currentMousePosition);
         }
-        tradeRouteLineRenderer.positionCount = points.Length;
-        tradeRouteLineRenderer.SetPositions(points);
+        navMeshCorners = points;
+        Vector3[] smoothedPoints = PathUtils.RoundCorners(
+            PathUtils.ReduceClosePoints(points, minDistance), cornerRadius, arcSamples)
+            .ToArray();
+        tradeRouteLineRenderer.positionCount = smoothedPoints.Length;
+        tradeRouteLineRenderer.SetPositions(smoothedPoints);
     }
 
     private Vector3[] CalculatePoints(Vector3 offset, Vector3 start, Vector3 end, Vector3 endOffset = default)
@@ -102,16 +125,11 @@ public class TradeRouteBuilder : MonoBehaviour
         if (!NavMesh.CalculatePath(start, end, NavMesh.AllAreas, path)) return new Vector3[] { offset, start, end, endOffset };
         if (path.status == NavMeshPathStatus.PathComplete)
         {
-            int arrayOffset = endOffset == default ? 2 : 1;
-            Vector3[] points = new Vector3[path.corners.Length + arrayOffset];
+            Vector3[] points = new Vector3[path.corners.Length + 1];
             points[0] = offset;
             for (int i = 0; i < path.corners.Length; i++)
             {
                 points[i + 1] = path.corners[i];
-            }
-            if (endOffset != default)
-            {
-                points[^1] = endOffset;
             }
 
             return points;
