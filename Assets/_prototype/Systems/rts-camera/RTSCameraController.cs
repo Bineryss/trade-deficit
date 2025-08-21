@@ -13,6 +13,9 @@ public class RTSCameraController : MonoBehaviour
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 20f;
+    [SerializeField] private float acceleration = 10f;
+    [SerializeField] private float deceleration = 20f;
+    private Vector3 velocity = Vector3.zero;
     [Header("Zoom")]
     [SerializeField] private float zoomSpeed = 20f;
     [SerializeField] private AnimationCurve zoomSpeedCurve;
@@ -25,14 +28,11 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] private Vector2 rotateInput;
     [SerializeField] private bool middleClickInput;
     private float zoomInput;
-    [SerializeField]private bool isGamePad;
+    [SerializeField] private bool isGamePad;
 
-    void Awake()
+
+    void OnEnable()
     {
-        inputActions = new RTSCameraInputs();
-        inputActions.Enable();
-        playerInput = GetComponent<PlayerInput>();
-
         inputActions.camera.move.performed += OnMove;
         inputActions.camera.move.canceled += OnMove;
 
@@ -48,11 +48,39 @@ public class RTSCameraController : MonoBehaviour
         playerInput.onControlsChanged += HandleControlsChanged;
     }
 
+    void OnDisable()
+    {
+        inputActions.camera.move.performed -= OnMove;
+        inputActions.camera.move.canceled -= OnMove;
+
+        inputActions.camera.look.performed -= OnRotate;
+        inputActions.camera.look.canceled -= OnRotate;
+
+        inputActions.camera.togglerotate.started -= ctx => middleClickInput = true;
+        inputActions.camera.togglerotate.canceled -= ctx => middleClickInput = false;
+
+        inputActions.camera.zoom.performed -= OnZoom;
+        inputActions.camera.zoom.canceled -= OnZoom;
+
+        playerInput.onControlsChanged -= HandleControlsChanged;
+    }
+
+    void Awake()
+    {
+        inputActions = new RTSCameraInputs();
+        inputActions.Enable();
+        if (playerInput == null)
+        {
+            playerInput = GetComponent<PlayerInput>();
+        }
+    }
+
     void Update()
     {
         float deltaTime = Time.unscaledDeltaTime;
         UpdateMovement(deltaTime);
         UpdateOrbit(deltaTime);
+        UpdateZoom(deltaTime);
     }
 
     private void HandleControlsChanged(PlayerInput input)
@@ -102,10 +130,28 @@ public class RTSCameraController : MonoBehaviour
         right.Normalize();
 
 
-        Vector3 motion = deltaTime * moveSpeed * (forward * moveInput.y + right * moveInput.x);
-        trackingPoint.position += motion;
-    }
+        Vector3 targetVelocity = moveSpeed * new Vector3(moveInput.x, 0, moveInput.y);
 
+        if (moveInput.sqrMagnitude > 0.1f)
+        {
+            velocity = Vector3.MoveTowards(velocity, targetVelocity, acceleration * deltaTime);
+        }
+        else
+        {
+            velocity = Vector3.MoveTowards(velocity, Vector3.zero, deceleration * deltaTime);
+        }
+
+        Vector3 motion = velocity * deltaTime;
+        trackingPoint.position += forward * motion.z + right * motion.x;
+    }
+    private void UpdateZoom(float deltaTime)
+    {
+        InputAxis axis = orbitalFollow.RadialAxis;
+        axis.Value -= zoomSpeed * zoomInput;
+        axis.Value = Mathf.Clamp(axis.Value, axis.Range.x, axis.Range.y);
+
+        orbitalFollow.RadialAxis = axis;
+    }
     private void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
