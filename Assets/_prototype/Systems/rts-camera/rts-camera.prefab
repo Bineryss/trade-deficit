@@ -61,8 +61,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5234928206853878089}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.60737586, y: 0, z: 0, w: 0.79441464}
-  m_LocalPosition: {x: 0, y: 482.50824, z: -131.09457}
+  m_LocalRotation: {x: 0.6087614, y: 0, z: 0, w: 0.7933533}
+  m_LocalPosition: {x: 0, y: 482.96292, z: -129.40952}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -95,7 +95,7 @@ MonoBehaviour:
     FieldOfView: 60
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 10000
+    FarClipPlane: 15000
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -126,7 +126,7 @@ MonoBehaviour:
   TargetOffset: {x: 0, y: 0, z: 0}
   TrackerSettings:
     BindingMode: 4
-    PositionDamping: {x: 0.2, y: 0, z: 1}
+    PositionDamping: {x: 0, y: 0, z: 0}
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
@@ -155,7 +155,7 @@ MonoBehaviour:
       Time: 2
     Restrictions: 0
   VerticalAxis:
-    Value: 74.8
+    Value: 75
     Center: 17.5
     Range: {x: 5, y: 75}
     Wrap: 0
@@ -167,7 +167,7 @@ MonoBehaviour:
   RadialAxis:
     Value: 0.5
     Center: 1
-    Range: {x: 0.5, y: 10}
+    Range: {x: 0.1, y: 10}
     Wrap: 0
     Recentering:
       Enabled: 0
@@ -266,11 +266,12 @@ MonoBehaviour:
   trackingPoint: {fileID: 6288294847284251601}
   playerInput: {fileID: 1046908021859241795}
   orbitalFollow: {fileID: 2884369269980521513}
+  playerCamera: {fileID: 0}
   moveSpeed: 5000
   acceleration: 8
   deceleration: 10
   zoomSpeed: 0.5
-  zoomSmooting: 5
+  zoomSmoothing: 5
   zoomSpeedCurve:
     serializedVersion: 2
     m_Curve:
@@ -304,11 +305,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  orbitSensitivity: 10
+  orbitSensitivity: 5
   orbitSmoothing: 5
-  rotateInput: {x: 0, y: 0}
-  middleClickInput: 0
-  isGamePad: 0
 --- !u!114 &1046908021859241795
 MonoBehaviour:
   m_ObjectHideFlags: 0

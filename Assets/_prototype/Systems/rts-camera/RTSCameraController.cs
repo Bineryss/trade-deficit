@@ -24,6 +24,7 @@ public class RTSCameraController : MonoBehaviour
     [Header("Orbit")]
     [SerializeField] private float orbitSensitivity = 0.5f;
     [SerializeField] private float orbitSmoothing = 5f;
+    [SerializeField] private Vector2 orbitVelocity = Vector2.zero;
 
     private RTSCameraInputs inputActions;
     private Vector2 moveInput;
@@ -95,15 +96,13 @@ public class RTSCameraController : MonoBehaviour
     }
     private void UpdateOrbit(float deltaTime)
     {
-        if (!isGamePad && !middleClickInput) return;
-
-        Vector2 orbitInput = orbitSensitivity * rotateInput;
+        orbitVelocity = Vector2.MoveTowards(orbitVelocity, orbitSensitivity * rotateInput, deltaTime * orbitSmoothing);
 
         InputAxis horizontalAxis = orbitalFollow.HorizontalAxis;
         InputAxis verticalAxis = orbitalFollow.VerticalAxis;
 
-        horizontalAxis.Value = Mathf.Lerp(horizontalAxis.Value, horizontalAxis.Value + orbitInput.x, deltaTime * orbitSmoothing);
-        verticalAxis.Value = Mathf.Lerp(verticalAxis.Value, verticalAxis.Value - orbitInput.y, deltaTime * orbitSmoothing);
+        horizontalAxis.Value += orbitVelocity.x;
+        verticalAxis.Value -= orbitVelocity.y;
 
         horizontalAxis.Value = ShiftValueInBounds(horizontalAxis);
         verticalAxis.Value = ShiftValueInBounds(verticalAxis);
@@ -176,6 +175,11 @@ public class RTSCameraController : MonoBehaviour
     }
     private void OnRotate(InputAction.CallbackContext context)
     {
+        if (!isGamePad && !middleClickInput)
+        {
+            rotateInput = Vector2.zero;
+            return;
+        }
         rotateInput = context.ReadValue<Vector2>();
     }
     private void OnZoom(InputAction.CallbackContext context)
