@@ -13,8 +13,8 @@ namespace RTSCamera
         public Vector2 RotateInput { get; private set; }
         public float ZoomInput { get; private set; }
 
-        private bool isGamePad;
         private RTSCameraInputs inputActions;
+        private bool isGamePad;
         private bool middleClickInput;
         void OnEnable()
         {
