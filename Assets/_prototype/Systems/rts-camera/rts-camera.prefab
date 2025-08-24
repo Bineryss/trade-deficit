@@ -229,6 +229,7 @@ GameObject:
   - component: {fileID: 1090782182589770795}
   - component: {fileID: 8477400296712461583}
   - component: {fileID: 1046908021859241795}
+  - component: {fileID: 4955155117760005614}
   m_Layer: 0
   m_Name: rts-camera-controller
   m_TagString: Untagged
@@ -264,14 +265,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RTSCameraController
   trackingPoint: {fileID: 6288294847284251601}
-  playerInput: {fileID: 1046908021859241795}
   orbitalFollow: {fileID: 2884369269980521513}
   playerCamera: {fileID: 0}
   moveSpeed: 5000
   acceleration: 8
   deceleration: 10
-  zoomSpeed: 0.5
-  zoomSmoothing: 5
+  zoomSpeed: 25
+  zoomSmoothing: 10
   zoomSpeedCurve:
     serializedVersion: 2
     m_Curve:
@@ -305,8 +305,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  orbitSensitivity: 5
-  orbitSmoothing: 5
+  orbitSensitivity: 0.2
+  orbitSmoothing: 3
+  inputReader: {fileID: 4955155117760005614}
 --- !u!114 &1046908021859241795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,3 +338,17 @@ MonoBehaviour:
   m_DefaultActionMap: camera
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &4955155117760005614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7685086069024502679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167276769add987498c8c498f63e3ed0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RTSCamera.RTSCameraInputProvider
+  playerInput: {fileID: 1046908021859241795}
+  mouseWheelZoomSpeedMultiplier: 5
