@@ -1,3 +1,4 @@
+using System;
 using RTSCamera;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -20,17 +21,18 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] private float zoomSpeed = 20f;
     [SerializeField] private float zoomSmoothing = 5f;
     [SerializeField] private AnimationCurve zoomSpeedCurve;
+    [SerializeField] private float mouseWheelZoomSpeedMultiplier = 5f;
     private float currentZoomSpeed;
     [Header("Orbit")]
     [SerializeField] private float orbitSensitivity = 0.5f;
     [SerializeField] private float orbitSmoothing = 5f;
-    [SerializeField] private Vector2 orbitVelocity = Vector2.zero;
+    private Vector2 orbitVelocity = Vector2.zero;
 
     private RTSCameraInputs inputActions;
     private Vector2 moveInput;
     private Vector2 rotateInput;
     private bool middleClickInput;
-    private float zoomInput;
+    [SerializeField] private float zoomInput;
     private bool isGamePad;
 
     void OnEnable()
@@ -41,8 +43,8 @@ public class RTSCameraController : MonoBehaviour
         inputActions.camera.look.performed += OnRotate;
         inputActions.camera.look.canceled += OnRotate;
 
-        inputActions.camera.togglerotate.started += ctx => middleClickInput = true;
-        inputActions.camera.togglerotate.canceled += ctx => middleClickInput = false;
+        inputActions.camera.togglerotate.started += OnToggleRotate;
+        inputActions.camera.togglerotate.canceled += OnToggleRotate;
 
         inputActions.camera.zoom.performed += OnZoom;
         inputActions.camera.zoom.canceled += OnZoom;
@@ -58,8 +60,8 @@ public class RTSCameraController : MonoBehaviour
         inputActions.camera.look.performed -= OnRotate;
         inputActions.camera.look.canceled -= OnRotate;
 
-        inputActions.camera.togglerotate.started -= ctx => middleClickInput = true;
-        inputActions.camera.togglerotate.canceled -= ctx => middleClickInput = false;
+        inputActions.camera.togglerotate.started -= OnToggleRotate;
+        inputActions.camera.togglerotate.canceled -= OnToggleRotate;
 
         inputActions.camera.zoom.performed -= OnZoom;
         inputActions.camera.zoom.canceled -= OnZoom;
@@ -156,15 +158,15 @@ public class RTSCameraController : MonoBehaviour
         InputAxis axis = orbitalFollow.RadialAxis;
 
         float targetZoomSpeed = 0;
-        float zoomMultiplier = zoomSpeedCurve.Evaluate(Mathf.InverseLerp(axis.Range.x, axis.Range.y, axis.Value)) * 10;
+        float zoomMultiplier = zoomSpeedCurve.Evaluate(Mathf.InverseLerp(axis.Range.x, axis.Range.y, axis.Value)) * zoomSpeed;
 
         if (Mathf.Abs(zoomInput) >= 0.01f)
         {
-            targetZoomSpeed = zoomSpeed * zoomInput * zoomMultiplier / 10;
+            targetZoomSpeed = zoomInput * zoomMultiplier;
         }
         currentZoomSpeed = Mathf.Lerp(currentZoomSpeed, targetZoomSpeed, zoomSmoothing * deltaTime);
 
-        axis.Value -= currentZoomSpeed;
+        axis.Value -= currentZoomSpeed * deltaTime;
         axis.Value = Mathf.Clamp(axis.Value, axis.Range.x, axis.Range.y);
 
         orbitalFollow.RadialAxis = axis;
@@ -184,6 +186,17 @@ public class RTSCameraController : MonoBehaviour
     }
     private void OnZoom(InputAction.CallbackContext context)
     {
-        zoomInput = context.ReadValue<float>();
+        if (isGamePad)
+        {
+            zoomInput = Mathf.Clamp(context.ReadValue<float>(), -1f, 1f);
+        }
+        else
+        {
+            zoomInput = Mathf.Clamp(context.ReadValue<float>(), -1f, 1f) * mouseWheelZoomSpeedMultiplier;
+        }
+    }
+    private void OnToggleRotate(InputAction.CallbackContext context)
+    {
+        middleClickInput = context.ReadValueAsButton();
     }
 }
