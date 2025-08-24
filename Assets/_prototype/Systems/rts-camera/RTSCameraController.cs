@@ -1,4 +1,3 @@
-using System;
 using RTSCamera;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -10,6 +9,7 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] private Transform trackingPoint;
     [SerializeField] private PlayerInput playerInput;
     [SerializeField] private CinemachineOrbitalFollow orbitalFollow;
+    [SerializeField] private Camera playerCamera;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 20f;
@@ -18,18 +18,19 @@ public class RTSCameraController : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
     [Header("Zoom")]
     [SerializeField] private float zoomSpeed = 20f;
+    [SerializeField] private float zoomSmoothing = 5f;
     [SerializeField] private AnimationCurve zoomSpeedCurve;
+    private float currentZoomSpeed;
     [Header("Orbit")]
     [SerializeField] private float orbitSensitivity = 0.5f;
     [SerializeField] private float orbitSmoothing = 5f;
 
     private RTSCameraInputs inputActions;
     private Vector2 moveInput;
-    [SerializeField] private Vector2 rotateInput;
-    [SerializeField] private bool middleClickInput;
+    private Vector2 rotateInput;
+    private bool middleClickInput;
     private float zoomInput;
-    [SerializeField] private bool isGamePad;
-
+    private bool isGamePad;
 
     void OnEnable()
     {
@@ -73,6 +74,11 @@ public class RTSCameraController : MonoBehaviour
         {
             playerInput = GetComponent<PlayerInput>();
         }
+
+        if (playerCamera == null)
+        {
+            playerCamera = Camera.main;
+        }
     }
 
     void Update()
@@ -112,7 +118,7 @@ public class RTSCameraController : MonoBehaviour
         {
             float normalized = axis.Value + Mathf.Abs(axis.Range.x);
             float wrapped = Mathf.Repeat(normalized, Mathf.Abs(axis.Range.x - axis.Range.y));
-            return wrapped - Math.Abs(axis.Range.x);
+            return wrapped - Mathf.Abs(axis.Range.x);
         }
 
 
@@ -121,24 +127,26 @@ public class RTSCameraController : MonoBehaviour
 
     private void UpdateMovement(float deltaTime)
     {
-        Vector3 forward = Camera.main.transform.forward;
+        Vector3 forward = playerCamera.transform.forward;
         forward.y = 0;
         forward.Normalize();
 
-        Vector3 right = Camera.main.transform.right;
+        Vector3 right = playerCamera.transform.right;
         right.y = 0;
         right.Normalize();
 
 
-        Vector3 targetVelocity = moveSpeed * new Vector3(moveInput.x, 0, moveInput.y);
+        float zoomFactorNormalized = Mathf.InverseLerp(orbitalFollow.RadialAxis.Range.x, orbitalFollow.RadialAxis.Range.y, orbitalFollow.RadialAxis.Value);
+        float zoomSpeedMultiplier = Mathf.Lerp(0.1f, 1f, zoomFactorNormalized);
+        Vector3 targetVelocity = moveSpeed * zoomSpeedMultiplier * new Vector3(moveInput.x, 0, moveInput.y);
 
         if (moveInput.sqrMagnitude > 0.1f)
         {
-            velocity = Vector3.MoveTowards(velocity, targetVelocity, acceleration * deltaTime);
+            velocity = Vector3.Lerp(velocity, targetVelocity, acceleration * deltaTime);
         }
         else
         {
-            velocity = Vector3.MoveTowards(velocity, Vector3.zero, deceleration * deltaTime);
+            velocity = Vector3.Lerp(velocity, Vector3.zero, deceleration * deltaTime);
         }
 
         Vector3 motion = velocity * deltaTime;
@@ -147,7 +155,17 @@ public class RTSCameraController : MonoBehaviour
     private void UpdateZoom(float deltaTime)
     {
         InputAxis axis = orbitalFollow.RadialAxis;
-        axis.Value -= zoomSpeed * zoomInput;
+
+        float targetZoomSpeed = 0;
+        float zoomMultiplier = zoomSpeedCurve.Evaluate(Mathf.InverseLerp(axis.Range.x, axis.Range.y, axis.Value)) * 10;
+
+        if (Mathf.Abs(zoomInput) >= 0.01f)
+        {
+            targetZoomSpeed = zoomSpeed * zoomInput * zoomMultiplier / 10;
+        }
+        currentZoomSpeed = Mathf.Lerp(currentZoomSpeed, targetZoomSpeed, zoomSmoothing * deltaTime);
+
+        axis.Value -= currentZoomSpeed;
         axis.Value = Mathf.Clamp(axis.Value, axis.Range.x, axis.Range.y);
 
         orbitalFollow.RadialAxis = axis;

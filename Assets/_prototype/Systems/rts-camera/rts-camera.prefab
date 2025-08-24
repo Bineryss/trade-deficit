@@ -266,16 +266,17 @@ MonoBehaviour:
   trackingPoint: {fileID: 6288294847284251601}
   playerInput: {fileID: 1046908021859241795}
   orbitalFollow: {fileID: 2884369269980521513}
-  moveSpeed: 500
-  acceleration: 500
-  deceleration: 1000
-  zoomSpeed: 20
+  moveSpeed: 5000
+  acceleration: 8
+  deceleration: 10
+  zoomSpeed: 0.5
+  zoomSmooting: 5
   zoomSpeedCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
-      value: 0
+      time: -0.0022812989
+      value: 0.06786978
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -283,13 +284,22 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 2
-      outSlope: 2
+      time: 0.5011577
+      value: 1.0036957
+      inSlope: -0.02922589
+      outSlope: -0.02922589
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0
+      inWeight: 0.33333334
+      outWeight: 0.16126108
+    - serializedVersion: 3
+      time: 1.0010376
+      value: 1.0093765
+      inSlope: 0.015031246
+      outSlope: 0.015031246
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.1782154
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
