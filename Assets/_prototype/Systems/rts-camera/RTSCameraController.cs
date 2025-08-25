@@ -30,12 +30,29 @@ namespace RTSCamera
         [Header("Input")]
         [SerializeField] private RTSCameraInputProvider inputReader;
 
+        public void Initialize(RTSCameraConfiguration configuration)
+        {
+            playerCamera = configuration.PlayerCamera;
+            moveSpeed = configuration.MoveSpeed;
+            acceleration = configuration.Acceleration;
+            deceleration = configuration.Deceleration;
+            watchMergeDistance = configuration.WatchMergeDistance;
+            zoomSpeed = configuration.ZoomSpeed;
+            zoomSmoothing = configuration.ZoomSmoothing;
+            orbitSensitivity = configuration.OrbitSensitivity;
+            orbitSmoothing = configuration.OrbitSmoothing;
+
+            if (inputReader == null)
+            {
+                inputReader = GetComponent<RTSCameraInputProvider>();
+            }
+
+            inputReader.Initialize(configuration);
+        }
         public void SetTarget(Transform target)
         {
             watchTarget = target;
         }
-
-
         void OnEnable()
         {
             if (playerCamera == null)

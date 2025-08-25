@@ -16,6 +16,12 @@ namespace RTSCamera
         private RTSCameraInputs inputActions;
         private bool isGamePad;
         private bool middleClickInput;
+
+        public void Initialize(RTSCameraConfiguration configuration)
+        {
+            mouseWheelZoomSpeedMultiplier = configuration.MouseWheelZoomSpeedMultiplier;
+        }
+
         void OnEnable()
         {
             if (playerInput == null)
