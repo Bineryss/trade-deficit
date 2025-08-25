@@ -15,6 +15,8 @@ namespace RTSCamera
         [SerializeField] private float moveSpeed = 20f;
         [SerializeField] private float acceleration = 10f;
         [SerializeField] private float deceleration = 20f;
+        [SerializeField] private float watchMergeDistance = 5f;
+        [SerializeField] private Transform watchTarget;
         private Vector3 velocity = Vector3.zero;
         [Header("Zoom")]
         [SerializeField] private float zoomSpeed = 20f;
@@ -28,6 +30,12 @@ namespace RTSCamera
         [Header("Input")]
         [SerializeField] private RTSCameraInputProvider inputReader;
 
+        public void SetTarget(Transform target)
+        {
+            watchTarget = target;
+        }
+
+
         void OnEnable()
         {
             if (playerCamera == null)
@@ -35,7 +43,6 @@ namespace RTSCamera
                 playerCamera = Camera.main;
             }
         }
-
         void Update()
         {
             float deltaTime = Time.unscaledDeltaTime;
@@ -43,7 +50,6 @@ namespace RTSCamera
             UpdateOrbit(deltaTime, inputReader.RotateInput);
             UpdateZoom(deltaTime, inputReader.ZoomInput);
         }
-
         private void UpdateOrbit(float deltaTime, Vector2 rotateInput)
         {
             orbitVelocity = Vector2.MoveTowards(orbitVelocity, orbitSensitivity * rotateInput, deltaTime * orbitSmoothing);
@@ -60,7 +66,6 @@ namespace RTSCamera
             orbitalFollow.HorizontalAxis = horizontalAxis;
             orbitalFollow.VerticalAxis = verticalAxis;
         }
-
         private float ShiftValueInBounds(InputAxis axis)
         {
             if (axis.Wrap)
@@ -76,6 +81,16 @@ namespace RTSCamera
 
         private void UpdateMovement(float deltaTime, Vector2 moveInput)
         {
+            if (watchTarget != null && moveInput.sqrMagnitude < 0.1f)
+            {
+                if (Vector3.Distance(trackingPoint.position, watchTarget.position) < watchMergeDistance) //TODO imporve follow logic
+                {
+                    trackingPoint.position = watchTarget.position;
+                    return;
+                }
+                trackingPoint.position = Vector3.Lerp(trackingPoint.position, watchTarget.position, Time.deltaTime);
+            }
+
             Vector3 forward = playerCamera.transform.forward;
             forward.y = 0;
             forward.Normalize();
@@ -91,6 +106,7 @@ namespace RTSCamera
 
             if (moveInput.sqrMagnitude > 0.1f)
             {
+                watchTarget = null;
                 velocity = Vector3.Lerp(velocity, targetVelocity, acceleration * deltaTime);
             }
             else
